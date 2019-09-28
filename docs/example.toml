@@ -1,0 +1,59 @@
+#
+# Example TOML configuration
+#
+
+#
+# User and password come from environment or command line.
+#
+[database]
+host = "localhost"
+database = "phoehne"
+
+#
+# This defines the queries by name
+# A query has an sql statement at the very least.
+# Optional paramters:
+# break ..... The records that change and start a new object
+# params .... The comma separated list of parameters
+#
+[queries]
+[queries.allCustomers]
+sql = """
+    select cust.id, cust.name, addr.city, addr.state, addr.zip
+    from customers cust inner join addresses addr 
+       on cust.id = addr.customer_id
+    order by cust.name"""
+break = "cust"
+
+[queries.customerSales]
+sql = """
+    select cust.id, inv.number, inv.date, inv.amount
+    from customers cust inner join invoices inv 
+        on cust.id = inv.customer_id
+    where cust.id = $1
+    order by inv.date"""
+params = "customerId"
+
+#
+# The connection information for the server
+#
+[connection]
+address = "0.0.0.0"
+port = 9000
+
+#
+# Endpoints are the uris wysci exposes
+#
+# An endpoint maps t a query and can have parameters
+# Each parameter has a type, a name, if it's required
+# and a default value
+#
+[endpoints]
+[endpoints.customers]
+name = "customers"
+query = "allCustomers"
+
+[endpoints.sales]
+query = "customerSales"
+[endpoints.sales.parameters.customerId]
+type = "number"
