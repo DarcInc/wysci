@@ -30,46 +30,77 @@ func typeMetadata(rows *sql.Rows) ([]string, []string, error) {
 	return names, typenames, nil
 }
 
+// Create a new buffer by allocating
+// TODO: need a more complete list of Postgres types (this may be okay for now)
 func createBuffer(typenames []string) []interface{} {
 	buffer := make([]interface{}, len(typenames))
 	// "VARCHAR", "TEXT", "NVARCHAR", "DECIMAL", "BOOL", "INT", "BIGINT"
 	for i, t := range typenames {
 		switch {
 		case t == "VARCHAR" || t == "TEXT" || t == "NVARCHAR":
-			buffer[i] = new(string)
+			buffer[i] = new(sql.NullString)
 		case t == "DECIMAL":
-			buffer[i] = new(float64)
+			buffer[i] = new(sql.NullFloat64)
 		case t == "BOOL":
-			buffer[i] = new(bool)
+			buffer[i] = new(sql.NullBool)
 		case t == "INT" || t == "INT4":
-			buffer[i] = new(int32)
+			buffer[i] = new(sql.NullInt32)
 		case t == "BIGINT":
-			buffer[i] = new(int64)
+			buffer[i] = new(sql.NullInt64)
 		}
 	}
 	return buffer
 }
 
-func castString(x interface{}) (string, error) {
-	strptr, ok := x.(*string)
+// Safely cast out a string
+func castString(x interface{}) (*sql.NullString, error) {
+	strptr, ok := x.(*sql.NullString)
 	if !ok {
-		return "", fmt.Errorf("Expected string ptr but got %v", reflect.TypeOf(x))
+		return nil, fmt.Errorf("Expected string ptr but got %v", reflect.TypeOf(x))
 	}
 
-	return *strptr, nil
+	return strptr, nil
 }
 
-func castInt32(x interface{}) (int32, error) {
-	int32ptr, ok := x.(*int32)
+// Safely cast out an int32
+func castInt32(x interface{}) (*sql.NullInt32, error) {
+	int32ptr, ok := x.(*sql.NullInt32)
 	if !ok {
-		return 0, fmt.Errorf("Expected int ptr but got %v", reflect.TypeOf(x))
+		return nil, fmt.Errorf("Expected int ptr but got %v", reflect.TypeOf(x))
 	}
-	return *int32ptr, nil
+
+	return int32ptr, nil
 }
 
+func castInt64(x interface{}) (*sql.NullInt64, error) {
+	int64ptr, ok := x.(*sql.NullInt64)
+	if !ok {
+		return nil, fmt.Errorf("Expected int64 ptr but got %v", reflect.TypeOf(x))
+	}
+	return int64ptr, nil
+}
+
+func castFloat64(x interface{}) (*sql.NullFloat64, error) {
+	float32Ptr, ok := x.(*sql.NullFloat64)
+	if !ok {
+		return nil, fmt.Errorf("Expected float64 ptr but got %v", reflect.TypeOf(x))
+	}
+	return float32Ptr, nil
+}
+
+func castBool(x interface{}) (*sql.NullBool, error) {
+	boolPtr, ok := x.(*sql.NullBool)
+	if !ok {
+		return nil, fmt.Errorf("Expected bool ptr but got %v", reflect.TypeOf(x))
+	}
+	return boolPtr, nil
+}
+
+// Scan a row into a buffer
 func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string {
 	rows.Scan(buffer...)
 	parts := []string{}
+	log.Printf("%v\n", buffer)
 
 	for idx, v := range buffer {
 		t := typenames[idx]
@@ -78,21 +109,67 @@ func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string 
 			s, err := castString(v)
 			if err != nil {
 				log.Printf("Unable to cast to string: %v", err)
+				continue
 			}
-			parts = append(parts, fmt.Sprintf("%v", s))
+
+			if s.Valid {
+				parts = append(parts, s.String)
+			} else {
+				parts = append(parts, "")
+			}
+		case t == "DECIMAL":
+			f, err := castFloat64(v)
+			if err != nil {
+				log.Printf("unable to cast to float: %v", err)
+			}
+
+			if f.Valid {
+				parts = append(parts, fmt.Sprintf("%f", f.Float64))
+			} else {
+				parts = append(parts, "")
+			}
+		case t == "BOOL":
+			b, err := castBool(v)
+			if err != nil {
+				log.Printf("Unable to cast to bool: %v", err)
+			}
+
+			if b.Valid {
+				parts = append(parts, fmt.Sprintf("%v", b.Bool))
+			} else {
+				parts = append(parts, "")
+			}
 		case t == "INT4":
 			i, err := castInt32(v)
 			if err != nil {
 				log.Printf("Unable to cast to int32: %v", err)
 			}
-			parts = append(parts, fmt.Sprintf("%d", i))
+
+			if i.Valid {
+				parts = append(parts, fmt.Sprintf("%d", i.Int32))
+			} else {
+				parts = append(parts, "")
+			}
+		case t == "BIGINT":
+			b, err := castInt64(v)
+			if err != nil {
+				log.Printf("Unable to cast to int64: %v", err)
+			}
+
+			if b.Valid {
+				parts = append(parts, fmt.Sprintf("%d", b.Int64))
+			} else {
+				parts = append(parts, "")
+			}
 		}
 	}
 
 	return parts
 }
 
+// Appends a line to the CSV response
 func appendCSVLine(w http.ResponseWriter, row []string) {
+	log.Printf("%v\n", row)
 	w.Write([]byte(strings.Join(row, ",")))
 	w.Write([]byte("\r\n"))
 }
@@ -120,11 +197,10 @@ func ConfigureEndpoints(config *Configuration, conn *sql.DB) (*httprouter.Router
 				return
 			}
 
-			w.Header().Add("Content-Type", "text/csv")
+			//w.Header().Add("Content-Type", "text/csv")
 			appendCSVLine(w, columns)
 			values := createBuffer(typenames)
 			for result.Next() {
-				result.Scan(values...)
 				parts := scanRow(result, values, typenames)
 				appendCSVLine(w, parts)
 			}

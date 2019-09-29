@@ -49,6 +49,7 @@ func finalInt(env, cmd, config, def int) int {
 
 func main() {
 
+	// TODO: Clean up the config code out of main
 	cmdConf := flag.String("config", "", "The configuration to load")
 	cmdHost := flag.String("dbhost", "", "The database hostname")
 	cmdUser := flag.String("dbuser", "", "The database user")
@@ -92,6 +93,7 @@ func main() {
 		log.Printf("Failed to create endpoints: %v", err)
 	}
 
+	// TODO: Needs to run using HTTPS
 	http.ListenAndServe(
 		fmt.Sprintf("%s:%d", config.Connection.Address, config.Connection.Port),
 		router,
