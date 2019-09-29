@@ -1,5 +1,6 @@
 drop table if exists customers;
 drop table if exists addresses;
+drop table if exists invoices;
 
 create table customers (
     id int not null,
@@ -30,3 +31,20 @@ insert into addresses (id, customer_id, address1, address2, city, state, zip)
     values (2, 1, '4768 Bobshire St', 'Suite 500', 'Portsmouth', 'NH', '19999');
 insert into addresses (id, customer_id, address1, city, state, zip)
     values (3, 2, '99 Marshal St', 'Bloomington', 'IN', '55555');
+
+create table invoices (
+    id int not null,
+    customer_id int not null,
+    number varchar not null,
+    date date not null,
+    amount money not null default 0.00,
+    primary key (id)
+);
+
+insert into invoices values (1, 1, 'A0001', '05/21/18', 1000.00);
+insert into invoices values (2, 1, 'C0072', '07/22/18', 1010.00);
+insert into invoices values (3, 1, 'D0084', '09/04/18', 2050.00);
+insert into invoices values (4, 1, 'D0092', '09/07/18', 750.00);
+insert into invoices values (5, 2, 'B0050', '05/30/18', 3432.45);
+insert into invoices values (6, 2, 'C0007', '07/10/18', 492.72);
+insert into invoices values (7, 2, 'D0192', '09/22/18', 4234.98);

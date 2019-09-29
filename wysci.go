@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
@@ -37,8 +38,10 @@ func createBuffer(typenames []string) []interface{} {
 	// "VARCHAR", "TEXT", "NVARCHAR", "DECIMAL", "BOOL", "INT", "BIGINT"
 	for i, t := range typenames {
 		switch {
-		case t == "VARCHAR" || t == "TEXT" || t == "NVARCHAR":
+		case t == "VARCHAR" || t == "TEXT" || t == "NVARCHAR" || t == "MONEY":
 			buffer[i] = new(sql.NullString)
+		case t == "TIMESTAMP" || t == "DATE":
+			buffer[i] = new(sql.NullTime)
 		case t == "DECIMAL":
 			buffer[i] = new(sql.NullFloat64)
 		case t == "BOOL":
@@ -96,6 +99,14 @@ func castBool(x interface{}) (*sql.NullBool, error) {
 	return boolPtr, nil
 }
 
+func castTime(x interface{}) (*sql.NullTime, error) {
+	timePtr, ok := x.(*sql.NullTime)
+	if !ok {
+		return nil, fmt.Errorf("Expected time ptr but got %v", reflect.TypeOf(x))
+	}
+	return timePtr, nil
+}
+
 // Scan a row into a buffer
 func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string {
 	rows.Scan(buffer...)
@@ -104,7 +115,7 @@ func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string 
 	for idx, v := range buffer {
 		t := typenames[idx]
 		switch {
-		case t == "VARCHAR" || t == "TEXT" || t == "NVCHAR":
+		case t == "VARCHAR" || t == "TEXT" || t == "NVCHAR" || t == "MONEY":
 			s, err := castString(v)
 			if err != nil {
 				log.Printf("Unable to cast to string: %v", err)
@@ -113,6 +124,23 @@ func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string 
 
 			if s.Valid {
 				parts = append(parts, s.String)
+			} else {
+				parts = append(parts, "")
+			}
+		case t == "TIMESTAMP" || t == "DATE":
+			s, err := castTime(v)
+			if err != nil {
+				log.Printf("Unable to cast time: %v", err)
+				continue
+			}
+
+			if s.Valid {
+				switch {
+				case t == "TIMESTAMP":
+					parts = append(parts, fmt.Sprintf("%v", s.Time))
+				case t == "DATE":
+					parts = append(parts, s.Time.Format("01/02/2006"))
+				}
 			} else {
 				parts = append(parts, "")
 			}
@@ -183,8 +211,25 @@ func ConfigureEndpoints(config *Configuration, conn *sql.DB) (*httprouter.Router
 	for name, endpoint := range config.Endpoints {
 		query := config.Queries[endpoint.QueryConfig]
 
+		log.Printf("Adding /api/v1/%s", name)
 		router.GET(fmt.Sprintf("/api/v1/%s", name), func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-			result, err := conn.Query(query.SQL)
+			parameters := make([]interface{}, len(endpoint.Parameters))
+			for pname, pdesc := range endpoint.Parameters {
+				raw := r.URL.Query().Get(pname)
+				switch {
+				case pdesc.Type == "number":
+					val, err := strconv.ParseInt(raw, 10, 64)
+					if err != nil {
+						log.Printf("Failed to configure %s: %v", name, err)
+						continue
+					}
+					parameters[pdesc.Ordinal-1] = val
+				case pdesc.Type == "string":
+					parameters[pdesc.Ordinal-1] = raw
+				}
+			}
+
+			result, err := conn.Query(query.SQL, parameters...)
 			if err != nil {
 				log.Printf("Failed to execute query: %v", err)
 				w.WriteHeader(500)
@@ -198,6 +243,8 @@ func ConfigureEndpoints(config *Configuration, conn *sql.DB) (*httprouter.Router
 				w.WriteHeader(500)
 				return
 			}
+
+			log.Printf("%v", typenames)
 
 			//w.Header().Add("Content-Type", "text/csv")
 			appendCSVLine(w, columns)

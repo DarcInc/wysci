@@ -32,7 +32,6 @@ sql = """
         on cust.id = inv.customer_id
     where cust.id = $1
     order by inv.date"""
-params = "customerId"
 
 #
 # The connection information for the server
@@ -57,3 +56,4 @@ query = "allCustomers"
 query = "customerSales"
 [endpoints.sales.parameters.customerId]
 type = "number"
+ordinal = 1

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -72,6 +73,9 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to load configuration: %v", err)
 	}
+
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.Encode(*config)
 
 	databaseHost := finalString(envHost, *cmdHost, config.Database.DBHost, "localhost")
 	databaseUser := finalString(envUser, *cmdUser, config.Database.DBUser, "postgres")

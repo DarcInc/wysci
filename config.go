@@ -35,6 +35,7 @@ type Service struct {
 type Parameter struct {
 	Type     string `toml:"type"`
 	Required string `toml:"required"`
+	Ordinal  int    `toml:"ordinal"`
 }
 
 // Endpoint describe a service endpoint
