@@ -15,8 +15,6 @@ Several times this need was expressed at the tail end of the project.
 I wind up adding an "open in Excel" button onto the page.
 So here is a simple service that takes a query and returns something that opens in Excel.
 
-B0@rderCollarLongshore
-
 ## Configuring
 The wysci server is meant to be configuration driven.
 The configuration file, expressed in [toml](https://github.com/toml-lang/toml), defines the queries and endpoints for the server.
@@ -41,6 +39,23 @@ The recommendation for database username and password are to pass them on the co
 
 ### Queries
 SQL queries as an SQL statement and possible parameters.
+The query can include parameters. 
+These are defined using the `$n` format where 1, 2, 3, etc. indicate the first, second, third parameters and so on, respectively.
+
 
 ### Endpoints
 Endpoints define service endpoints for specific queries.
+These are exposed as `/api/v1/\[name\]` endpoints.
+
+#### Parameters
+Defines the parameters to be passed to the endpoint.
+These parameters are then passed to the configured query.
+
+|Option  |Description                                     |
+|--------|------------------------------------------------|
+|type    |The type of the value (e.g. number, string,etc) |
+|ordinal |The position in the query                       |
+
+#### Headers
+The endpoint can return additional headers.
+For example, coercing the type to `text/csv` so the browser will open the spreadsheet program.
