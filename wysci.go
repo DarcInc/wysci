@@ -2,9 +2,12 @@ package wysci
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -204,6 +207,59 @@ func appendCSVLine(w http.ResponseWriter, row []string) {
 	w.Write([]byte("\r\n"))
 }
 
+func extractParameters(name string, config Endpoint, url *url.URL) []interface{} {
+	parameters := make([]interface{}, len(config.Parameters))
+	for pname, pdesc := range config.Parameters {
+		raw := url.Query().Get(pname)
+		switch {
+		case pdesc.Type == "number":
+			val, err := strconv.ParseInt(raw, 10, 64)
+			if err != nil {
+				log.Printf("Failed to configure %s: %v", name, err)
+				continue
+			}
+			parameters[pdesc.Ordinal-1] = val
+		case pdesc.Type == "string":
+			parameters[pdesc.Ordinal-1] = raw
+		}
+	}
+	return parameters
+}
+
+func makeHandler(conn *sql.DB, sql string, name string, config Endpoint) func(http.ResponseWriter, *http.Request, httprouter.Params) {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.Encode(config)
+
+		parameters := extractParameters(name, config, r.URL)
+
+		result, err := conn.Query(sql, parameters...)
+		if err != nil {
+			log.Printf("Failed to execute query: %v", err)
+			w.WriteHeader(500)
+			return
+		}
+		defer result.Close()
+
+		columns, typenames, err := typeMetadata(result)
+		if err != nil {
+			log.Printf("Failed to get result metadata: %v", err)
+			w.WriteHeader(500)
+			return
+		}
+
+		log.Printf("%v", typenames)
+
+		//w.Header().Add("Content-Type", "text/csv")
+		appendCSVLine(w, columns)
+		values := createBuffer(typenames)
+		for result.Next() {
+			parts := scanRow(result, values, typenames)
+			appendCSVLine(w, parts)
+		}
+	}
+}
+
 // ConfigureEndpoints configures the service endpoints
 func ConfigureEndpoints(config *Configuration, conn *sql.DB) (*httprouter.Router, error) {
 	router := httprouter.New()
@@ -212,48 +268,7 @@ func ConfigureEndpoints(config *Configuration, conn *sql.DB) (*httprouter.Router
 		query := config.Queries[endpoint.QueryConfig]
 
 		log.Printf("Adding /api/v1/%s", name)
-		router.GET(fmt.Sprintf("/api/v1/%s", name), func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-			parameters := make([]interface{}, len(endpoint.Parameters))
-			for pname, pdesc := range endpoint.Parameters {
-				raw := r.URL.Query().Get(pname)
-				switch {
-				case pdesc.Type == "number":
-					val, err := strconv.ParseInt(raw, 10, 64)
-					if err != nil {
-						log.Printf("Failed to configure %s: %v", name, err)
-						continue
-					}
-					parameters[pdesc.Ordinal-1] = val
-				case pdesc.Type == "string":
-					parameters[pdesc.Ordinal-1] = raw
-				}
-			}
-
-			result, err := conn.Query(query.SQL, parameters...)
-			if err != nil {
-				log.Printf("Failed to execute query: %v", err)
-				w.WriteHeader(500)
-				return
-			}
-			defer result.Close()
-
-			columns, typenames, err := typeMetadata(result)
-			if err != nil {
-				log.Printf("Failed to get result metadata: %v", err)
-				w.WriteHeader(500)
-				return
-			}
-
-			log.Printf("%v", typenames)
-
-			//w.Header().Add("Content-Type", "text/csv")
-			appendCSVLine(w, columns)
-			values := createBuffer(typenames)
-			for result.Next() {
-				parts := scanRow(result, values, typenames)
-				appendCSVLine(w, parts)
-			}
-		})
+		router.GET(fmt.Sprintf("/api/v1/%s", name), makeHandler(conn, query.SQL, name, endpoint))
 	}
 
 	return router, nil
