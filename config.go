@@ -42,6 +42,7 @@ type Parameter struct {
 type Endpoint struct {
 	QueryConfig string               `toml:"query"`
 	Parameters  map[string]Parameter `toml:"parameters"`
+	Headers     map[string]string    `toml:"headers"`
 }
 
 // Configuration defines a wysci server

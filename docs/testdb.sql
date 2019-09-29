@@ -48,3 +48,4 @@ insert into invoices values (4, 1, 'D0092', '09/07/18', 750.00);
 insert into invoices values (5, 2, 'B0050', '05/30/18', 3432.45);
 insert into invoices values (6, 2, 'C0007', '07/10/18', 492.72);
 insert into invoices values (7, 2, 'D0192', '09/22/18', 4234.98);
+

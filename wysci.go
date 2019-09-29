@@ -2,12 +2,10 @@ package wysci
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -228,9 +226,7 @@ func extractParameters(name string, config Endpoint, url *url.URL) []interface{}
 
 func makeHandler(conn *sql.DB, sql string, name string, config Endpoint) func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.Encode(config)
-
+		log.Printf("Executing %s", name)
 		parameters := extractParameters(name, config, r.URL)
 
 		result, err := conn.Query(sql, parameters...)
@@ -248,9 +244,12 @@ func makeHandler(conn *sql.DB, sql string, name string, config Endpoint) func(ht
 			return
 		}
 
-		log.Printf("%v", typenames)
+		if len(config.Headers) > 0 {
+			for name, val := range config.Headers {
+				w.Header().Add(name, val)
+			}
+		}
 
-		//w.Header().Add("Content-Type", "text/csv")
 		appendCSVLine(w, columns)
 		values := createBuffer(typenames)
 		for result.Next() {

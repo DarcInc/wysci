@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -74,9 +73,6 @@ func main() {
 		log.Printf("Failed to load configuration: %v", err)
 	}
 
-	encoder := json.NewEncoder(os.Stdout)
-	encoder.Encode(*config)
-
 	databaseHost := finalString(envHost, *cmdHost, config.Database.DBHost, "localhost")
 	databaseUser := finalString(envUser, *cmdUser, config.Database.DBUser, "postgres")
 	databasePass := finalString(envPass, *cmdPass, config.Database.DBPass, "")
@@ -85,7 +81,6 @@ func main() {
 
 	connString := fmt.Sprintf("user=%s dbname=%s host=%s password=%s port=%d sslmode=disable",
 		databaseUser, databaseName, databaseHost, databasePass, databasePort)
-	fmt.Println(connString)
 	conn, err := sql.Open("postgres", connString)
 	if err != nil {
 		log.Printf("Failed to open database: %v", err)
