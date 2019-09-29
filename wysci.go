@@ -100,7 +100,6 @@ func castBool(x interface{}) (*sql.NullBool, error) {
 func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string {
 	rows.Scan(buffer...)
 	parts := []string{}
-	log.Printf("%v\n", buffer)
 
 	for idx, v := range buffer {
 		t := typenames[idx]
@@ -121,6 +120,7 @@ func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string 
 			f, err := castFloat64(v)
 			if err != nil {
 				log.Printf("unable to cast to float: %v", err)
+				continue
 			}
 
 			if f.Valid {
@@ -132,6 +132,7 @@ func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string 
 			b, err := castBool(v)
 			if err != nil {
 				log.Printf("Unable to cast to bool: %v", err)
+				continue
 			}
 
 			if b.Valid {
@@ -143,6 +144,7 @@ func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string 
 			i, err := castInt32(v)
 			if err != nil {
 				log.Printf("Unable to cast to int32: %v", err)
+				continue
 			}
 
 			if i.Valid {
@@ -154,6 +156,7 @@ func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string 
 			b, err := castInt64(v)
 			if err != nil {
 				log.Printf("Unable to cast to int64: %v", err)
+				continue
 			}
 
 			if b.Valid {
@@ -169,7 +172,6 @@ func scanRow(rows *sql.Rows, buffer []interface{}, typenames []string) []string 
 
 // Appends a line to the CSV response
 func appendCSVLine(w http.ResponseWriter, row []string) {
-	log.Printf("%v\n", row)
 	w.Write([]byte(strings.Join(row, ",")))
 	w.Write([]byte("\r\n"))
 }

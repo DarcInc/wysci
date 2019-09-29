@@ -22,7 +22,7 @@ sql = """
     select cust.id, cust.name, addr.address1, addr.address2, addr.city, addr.state, addr.zip
     from customers cust inner join addresses addr 
        on cust.id = addr.customer_id
-    order by cust.name"""
+    order by cust.id"""
 break = "cust"
 
 [queries.customerSales]
