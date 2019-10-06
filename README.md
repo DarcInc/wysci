@@ -3,9 +3,13 @@ Wysci is a library for executing simple SQL commands against a database.
 The data can then be retrieved from the wysci server at the configured endpoint.
 For the time being it will support Postgres.
 
+## Project Notes
+I am creating a set of notes about how I built this project and the decisions I've made.
+1. [POC](https://github.com/DarcInc/wysci/blob/master/docs/version0.md)
+
 ## Motivation
 This is a simple service that serves as a basis for exploring API design concepts.
-It exposes a set of simple endpoints that retrieve data and return it using CSV.
+It exposes a set of simple endpoints that retrieve data and ret)urn it using CSV.
 Without being overly complicated, it provides an API that can illustrate good design practices
 
 ### Side Note
