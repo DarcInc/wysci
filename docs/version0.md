@@ -1,191 +1,179 @@
 # Motivation
-It's 11:17 PM and I've come to the conclusion that the code base needs to be refactored.
-I should go to bed and work on this with a good night's sleep and a clear head, but the project's already behind.
-I'm adding a simple feature that should be two-point feature.
+It's 11:17 PM and I've come to the realization that the code base I'm working with needs to be refactored.
+I should go home, go to bed, and work on this with a good night's sleep and a clear head, but the project's already behind.
+I'm adding a simple feature that should have been a day, or day and a half, of work.
 There's no good way to do it.
-There's an ugly way to hack it in, but the hack creates a maintenance headache.
-There's a correct way to integrate that feature, but it will result in a lot of code and digging into the details of the ORM we chose.
+There's an ugly hack, but the hack creates a maintenance headache.
+The correct way to integrate the feature requires digging into the details of the ORM.
 Had we understood the problem better three months ago, we would have made different choices.
 
 I'm not the only one in this predicament.
-The rest of the team is grumbling.
-The next time we do this, we won't be in this miss.
-We will better understand the problem and will make better choices.
-The choices we made three months ago, in our first sprints, seemed reasonable at that time.
-This was the first time this team ever worked on this type of application.
-If it had been a regular Web application, we would have known exactly what to do.
+The rest of the team is struggling with the same issues.
+We won't be in this mess the next time do this.
+We will better understand the problem and the tools.
+We will make better choices.
+What we decided three months ago, in our first sprints, seemed reasonable at that time.
 
-Most software developers find themselves in that predicament at some point in their careers.
-There's a good chance you have been that developer.
+We wouldn't be on a death-march if this had been a typical web application.
+This was the first time this team ever worked on this type of application.
+It was the first time we used this ORM.
+We also needed a plugin framework, which we had to write and required some new language features.
+The plugins sometimes confused the ORM, which was a side effect we hadn't anticipated.
+
+Most software developers find themselves in a similar predicament at some point in their careers.
 Maybe you have been in meetings, explaining to your customer, why simple features take weeks to implement.
 You and your customers know it's not a big request, but you have to work in a legacy code base.
-(By legacy I don't mean from the 1970's, I just mean it already exists.)
-It's one thing for the issue to come up on code that's 10 or 15 years old, but it sometimes comes up on six-month old code.
-Every decision you make early on in a project has the potential to bind future actions.
+(Legacy doesn't mean from the 1970's, it just means already existing.)
+It's expected for legay issues to surface on older code, but legacy issues can appear on six-month old code.
+Every decision you make in a project has the potential to bind future actions.
 
-The big-design-up-front school (BDUF) tried to mitigate this issue with detailed design and analysis before coding begins.
+The big-design-up-front school (BDUF) tried to mitigate these issues with detailed design before coding.
+It was thought you can anticipate more future issues with a detailed design.
 But there are some problems with BDUF.
-First is most customers won't pay for detailed designs that are obsolete days after they were created.
-But more importantly, the assumptions made during design are often made using experience.
-If a team has little experience with a technology, it's hard to make a good design.
-Just as bad decisions early in an agile project create problems in later sprints, bad choices in the initial design can lead to a bad final design.
+First, most customers won't pay for detailed designs they will not use and are almost immediately obsolete.
+More importantly, the assumptions made during design are often made using experience.
+If a team has little experience with a technology, problem domain, or system type, good designs are difficult.
+Bad decisions early in an agile project create legacy issues in later sprints, just as bad choices in design can lead to an unworkable design.
 
-How do you take the risk out of those decisions?
-Without a time machine, is there a way you can visit the future to see what kinds of issues you might face?
-Can you deliver this without treating this project as a "learning exercise?"
+How do you take the risk out of early decisions?
+Without a time machine, can you can visit the future to understand the issues you might face?
 The answer, of course, is to create a "Proof of Concept."
 A POC (Proof of Concept) is a narrowed down version of what you intend to build.
 By quickly iterating on the problem once, you expose the issues and decision points you may encounter in the future.
 
-## The Proof of Concept
-I sometimes view projects as being on a spectrum between the well known and the largely unknown.
-At one end of the spectrum are projects where the scope and implemenation plan are well understood.
-This project is similar to previous projects.
-A form based Web application is a good example.  
-I've written this type of application several times in several languages.
-While there may be new requirements, I understand what needs to be done.
-Making decisions in the solution space is based on experience or cookbook style from Stack Overflow or GitHub.
-
-The second extreme is something truly novel.
-This is unlike other projects to date, and experience is a poor guide.  
-An example might be a GNOME application using Scala.
-I've never written a GNOME application, I don't write desktop GUI applications, and I've never used Scala.
-Chances are, there isn't a series of cookbook articles on writing GNOME desktop applications in Scala.
-Visualizing what needs to be done during implementation isn't easy.
-I have to make a lot of decisions based on assumptions and 'first principles,' rather than memory or documentation.
-
-Most projects are somewhere between these extremes.
-Even in familiar applications there is some novelty (otherwise you should just use or create a product).
-The more novelty, the more unknown create real or perceived risk.
-One way to become familiar with new tools or frameworks is to write a simple example program.
-Even if it has nothing to do with the project, it gives a modicum of experience to ground future decisions.
-
-There are times when the unknowns are not just one new tool for framework.
-Maybe there are several new tools, or maybe this is a different kind of application.
-What creates risk is now these new tools interact in a novel context.
-What you really need is a simplified version of the problem.
-The need for a POC is a function of you, your team, and the combined experience.
-It doesn't really matter that someone out there in the world has done it, unless they also happen to be on your team.
-
 ## The Application
-The basic idea behind wysci is to expose SQL queries as endpoints that return CSV data.
-In the past I've written applications that were search and data centric.
-One request that always comes at the end of the project is to be able to download the data into Excel.
-In some cases there's no discussion on this requirement until a later stage demo and a user asks 'how do I get this into Excel?'
-No matter how expertly you create visualizations in [D3](https://d3js.org/), there are users that just want to open in Excel.
+Wysci exposes SQL queries as endpoints returning CSV data.
+Returning data as CSV may be the most consistently requested feature I've built into search applications.
+'How do I get this into Excel?'
+Is the question asked sometime in a late-stage demo of the project.
+You can be a visualization artist with [D3](https://d3js.org/), but some users perfer spreadsheets.
 
-I'm starting wysci with a proof of concept.
-I'm familiar with parts of the problem.
-I like Go and I've written a program or two in Go.
-I've wrtten plenty of Web API endpoints.
+There are enough open questions I've decided to start wysci as a POC.
+I'm familiar with parts of the problem, such as writing Go code, and writing Web APIs.
 I also have many years of SQL experience.
-But there are some things which are open questions, among which are:
+I'm not clear about some parts of the application:
 1. JSON (my first go-to format for configuration) doesn't handle multi-line strings well.  I've heard TOML does a better job, but I've never used it.
-2. I understand how to use Postgres and Go, but when I know ahead of time the number of columns in the result and their type.  How do I handle dynamic results?
-3. What kinds of endpoints and queries can I define in the configuration file?  Will there be any serious limitations?
-4. How do I define and pass parameters between queries and the front end endpoints?  Can I enforce typing or other constraints?
-5. I'm very wary of concatinating text to form SQL queries.  Maybe I can template the queries?
+2. I've used Postgres with Go, but I knew ahead of time the number of columns and their type in the query result.  How do I handle dynamic results?
+3. Are there limits to the type of queries I can define in the configuration file?
+4. How do I define and pass parameters?  Can I enforce typing or other constraints?
+5. I'm very wary of concatenating text to form SQL queries.  Maybe I can template the queries?
 
-There are a fair number of unknowns.
-I suspect it may involve some unsafe casting.
-This also represents the guts of the application, safely exposing SQL queries defined in configuration files.
-I have enough open questions that I would rather start with a POC.
-What are the bounds on the POC?
-What should I include and what should I leave for the actual application.
+## The Proof of Concept
+I sometimes view projects on a spectrum between the well known and the largely unknown.
+At one end are projects with well understood scope and implementation plans.
+These are projects similar to previous projects, like a forms-based Web application.  
+I've written this type of application several times in several languages.
+There may be new requirements, but I understand what needs to be done.
+You can rely one experience when making decisions in a familar solution space.
+Abundant and high quality examples (maybe in GitHub or Stack Overflow) can complent personal experience.
+
+The second extreme is a truly novel application.
+An example for me might be a GNOME application using Scala.
+I have never written a GNOME application, I don't regularly write desktop GUI applications, and I've never used Scala.
+Chances are, there is no abbundance of documentation on writing GNOME desktop applications in Scala.
+Experience may be a poor guide.
+Decisions I make are lower quality and more likely to create legacy issues in the future.
+
+Most projects are between these extremes.
+Even familiar applications have some novelty (otherwise you should just use or create a product).
+The more novelty, the more real or perceived risk.
+Developers often work with simple example programs when learning new frameworks and tools.
+Even a simple example can raise confidence and mitigate risk.
+
+Sometimes the uncertainty is not limited to a single tool or framework.
+There may be several new tools, or this may be a different kind of application.
+Risk can be amplified as these new tools interact with a novel context.
+Having already built a similar application with the same tools would b idea.
+Even a simplified version would be helpful.
+This is the function a POC is meant to perform.
 
 ### Limiting Scope
-Above all I will need to limit scope.
-This is harder than it looks, even for this fairly simple API.
-For example, I could let the user dictate the format of the response through the `Accept` header.
-In fact, a good API should allow for allowing the user to specify the content types they are willing to accept.
-But that isn't a core part of the original idea, which is to provde a CSV data endpoint.
+Scope management isn't unique to a POC, but it is critical.
+Ideas will present themselves as you or your team start working on the POC.
+For example, I thought I should implement content negotiation through the `Accept` header.
+Some users may want JSON or XML results.
+But that isn't a core part of the original idea.
 
-The key reason to limit scope is the proof of concept should be a short lived activity.
-Depending on the scope of the final application, somewhere between a day an a week.
-Adding scope to the proof of concept takes time away from the actual application.
-You also risk never completing the POC and answering your questions.
+The key reason to limit scope in the proof of concept is because the POC should be completed quickly.
+Depending on the scope of the final application, a POC should last between a day an a week.
+Adding scope to the proof of concept takes time away from developing the production code.
+You also risk never completing the POC as new features are introduced.
 
 ### Testing
 I will skip testing.
-This is not laziness or a lack of intention.
-Tests are much easier to write when the structure and layering are more clear.
-As I work through the POC I expect to understand better how to break up my application.
-With no clear idea how to separate layers or responsibilities, writing tests would just slow me down.
+I am not lazy and I'm very aware of good practice.
+Tests are easier to write when we can anticipate the structure and layering in a project.
+As I work through the POC I expect to understand better how to structure my application.
+With no clear idea how to separate layers or responsibilities, writing tests would slow me down.
 
 If I make changes to method signatures, move around responsibilities, or change the layering, I'll have to stop and update my tests.
-The goal of the POC is to quickly answer questions, not deliver production code.
+The goal of the POC is to quickly answer questions and validate assumptions.
+A POC is not responsible for delivering production code.
 I certainly believe in writing tests for production code.
 
 ### Incompleteness
-Even within the limited scope I don't cover *everything*.
-I don't have to support every type that could be returned in a Postgres query.
-There maybe some risk that ignoring a type might result in a reachitecting of how queries are handled, but that's not likely.
-But what if those types never become important?
-Would someone looking to pull the results of a query into Excel really care about arrays of raw bytes?
-Maybe all we ever need are strings, numbers, and dates.
-I may have to addresses these types in the production app, along with security, monitoring, caching, etc. etc.
-However, these don't help answer any of my core questions.
+Even within the limited scope I wil not address every concern.
+I will not support every data type that could be returned in a Postgres query.
+There is some risk that ignoring a detail might result in a in drastically different decisions.
+On the other hand, I feel that the basic types should be sufficient and what if those other data are never used?
+For example, byte arrays may not be as useful in a spreadsheet.
 
 ### Disposable
 I've written POCs in the past that were pushed into production.
-It was fine for version 1 of the application, but terrible when changes began to arrive.
-The need for speed allowed me to simplify assumptions and ignore certain issues.
+It was fine for version 1 of the application, but terrible when changes began to accumulate.
+The need for speed early on favored simplified assumptions and ignoring complicating issues.
 These issues and incorrect assumptions haunted me during versions 2, 3, and so on.
-I would rather spend very little time on the POC and then retired it.
-I expect to re-write large chunks of it, or even just check it into an 'examples' folder.
+I don't have to literally throw away my POC, but I should be free to start from scratch.
 
 ### Functional
 Everything in the POC should work.
-If there's no time to make it work, it probably has little value.
-Therefore, don't even include it.
-Especially when working inside a team, the ability to check out the POC and run it helps others understand how the software will be constructed.
+If there is no time to deliver a completed feature, it probably has little value.
+Therefore, I will not include it.
+Other team members may check out the POC and run it to get a better understanding of the project.
+A broken application will result in wasted time.
 
 ### It's Private
-If you're doing work for a client, and you show them the POC, they will assume you are done.
-An architect might show a client a small, scale, table-top model of their building.
-Unless you're Derek Zoolander, you probably won't confuse the model for the real thing.
-However, clients often confuse the POC application with a deliverable application.
-It's been my experience that clients forget or ignore any disclaimers or warnings before the demo.
-Rather than explain why the 'data is wrong,' or 'who gave you our data,' or 'when will you fix all the bugs,' keep this as an internal effort.
+If you're doing work for a client, and you show them the POC, they may assume you are done.
+An architect might show a client a small-scale, table-top model of a building.
+Unless you're Derek Zoolander, you probably won't confuse that model for a real building.
+However, clients can view the POC as a deliverable product.
+It's been my experience that disclaimers or warnings are not effective.
+Rather than dealing with the questions the POC will generate, keep it within the team.
 
 ### Recipe - How to do it Wrong
-1. Every idea you have along the way is added into the POC.
-2. Spend half the time re-writing tests because all the interfaces are in flux.
-3. Try to make sure every option and every feature is included.
-4. Because of all the work you're putting into it, this must be the production code.
-5. Lots of non-functional features in the POC for user to click on.
-6. Demoing it to people that won't understand the difference between the model on the table-top and the actual building.
+1. Every idea is added into the POC.
+2. Constantly re-writing tests as wholsale changes are made to the code.
+3. Making sure each feature covers every edge case and corner case.
+4. Planning to take the application to production.
+5. Lots of non-functional features in the POC for developers to debug.
+6. Demoing it to end users who have many questions about the stability, performance, or appearance of the application.
 
 ### Recipe - How to do it Right
-1. What do you need clarified?  Fixate on just that.  Keep a wiki of 'good ideas for later.'
-2. Keep it small so you can test just by running it.
-3. Only focus on the things you really need to clarify the problem.  Nothing else is important right now.
+1. Fixate on implementing only what is needed to reduce project risk.  Keep a wiki of 'good ideas for later.'
+2. Keep it small and simple enough to test by running it.
+3. Focus on the core concepts, postpone details until after the POC.  Focus on the 80% (or less) that can be done quickly, not the 20% that will take most of the time.
 4. Assume this is throw away code.
 5. Everything basically works.  You've exercised the issue.
-6. This is for you and your team, like private data inside a class.  If you need to 'take it to the client,' make some slides.
+6. This is for you and your team.  If you need to 'take it to the client,' make some slides.
 
 ## Abandoning the POC
 There may come a point where the POC is no longer needed.
-You start the POC and realize that you can do this with existing tools, or the solution is actually much simpler than first thought.
+You may start the POC and realize that the problem is simpler than originally believed.
 Or maybe you decide problem you're trying to solve isn't worth solving.
 It's okay to abandon a POC because it's no longer valuable.
+What is the benefit of completing something with no value?
 
 ## Isn't This Just Agile?
 The agile terminology might be a spike.
-A spike is where you go off and investigate something.
+A spike allows a developer to investigate an issue to help determine its scope or possible solution..
 Usually a spike is an afternoon or a couple of hours.  
 A POC lasts a little longer.
-It could be up to a week, but a day or two is often sufficient.
-
-While you make create a POC during other parts of the project, you will generally create it at the very begining.
-Spikes occur throughout the project as issues and need arise.
-For example, I had never used RabbitMQ until one project so I took a spike to setup and test out the RabbitMQ Java API.
-That helped me better estimate the points for the follow on work.
+Like spikes, a POC should be used whenever it's needed, even in later stages of the project.
 
 ## Conclusion
 The world is full of complexity and unknowns.
 As the man said, there are known unknowns and unknown unknowns.
-The goal of a POC is to try to understand better the known unknowns and to expose some of the unkown unknowns.
+The goal of a POC is to try to understand better the known unknowns and to expose some of the unknown unknowns.
 The key is to do it quickly and efficiently.
-Then take the learnings, but not necessarily the code, to the actual problem.
+Then take the learnings, but not necessarily the code, to design and build the production code.
 With that in mind, these principles will help you keep it short, focused, and valuable.
