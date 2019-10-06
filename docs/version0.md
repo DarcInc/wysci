@@ -24,7 +24,7 @@ Most software developers find themselves in a similar predicament at some point 
 Maybe you have been in meetings, explaining to your customer, why simple features take weeks to implement.
 You and your customers know it's not a big request, but you have to work in a legacy code base.
 (Legacy doesn't mean from the 1970's, it just means already existing.)
-Legacy issues to are expected on older code.  
+Legacy issues to are expected on older code.
 Legacy issues should not appear on recent code.
 In part, these issues arise because every decision made in a project sometimes binds future actions.
 
@@ -116,7 +116,7 @@ I certainly believe in writing tests for production code.
 Even within the limited scope I will not address every concern.
 I will not support every data type that could be returned in a Postgres query.
 There is some risk that ignoring a detail might result in a drastically different decision.
-On the other hand, I feel the basic types are sufficient for the POC.  
+On the other hand, I feel the basic types are sufficient for the POC.
 Other types might never be used.
 For example, unsigned byte arrays may not be as useful in a spreadsheet.
 
@@ -168,7 +168,7 @@ What is the benefit of completing something with will serve no purpose?
 ## Isn't This Just Agile?
 The agile terminology might be a spike.
 A spike allows a developer to investigate an issue to help determine its scope or possible solution.
-Usually a spike is an afternoon or a couple of hours.  
+Usually a spike is an afternoon or a couple of hours.
 A POC lasts a little longer.
 Like spikes, a POC should be used whenever it's needed, even in later stages of the project.
 
