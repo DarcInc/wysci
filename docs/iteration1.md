@@ -1,17 +1,17 @@
 # Starting the Application
 The POC helped clarify several unknowns.
-More importantly, I have some [answers](https://github.com/DarcInc/wysci/blob/master/docs/version0.md#the-application) to some questions I had when starting the POC.
+More importantly, I have [answers](https://github.com/DarcInc/wysci/blob/master/docs/version0.md#the-application) to some questions I had when starting the POC.
 With the POC completed, I'm ready to start laying out the initial application.
 
-The key problem turnd out to be safely casting the slice of `interface{}` elements to their pointer types and correlty handling `null` values.
-I realized the number of types returned by `Scan([]interface{})` is small.
+The key problem was safely casting a slice of `interface{}` elements to the correct pointer types and correctly handling `null` values.
+Essentially, I need to construct a buffer for the result.
+The elements in the buffer need to be typed correctly for the SQL result type.
 I started down one possible approach in the POC, but I don't intend to use it.
 The code feels unnecessarily verbose.
-I'll work the detailed mechanics later.
 
 Second to that problem was how to define endpoints and queries.
 The solution seemed obvious at a high level.
-When I tried validating parameters, it wasn't clear where that responsiblity should rest.
+When I tried validating parameters in the POC, it wasn't clear where that responsiblity should rest.
 Adding parameter definitions in the endpoint simplifies validation.
 However, it's the query that knows what types it should expect.
 Also, my first attempts at defining type information were very verbose.
@@ -103,4 +103,14 @@ While there are project like [OpenTracing](https://opentracing.io/), tracing req
 Most of the users of wysci will probably prefer simple logs.
 1. Log entry and exit points for operations.
 2. Implement levels of verbosity
+
+## Results
+While working on items 1 and 2 (SQL data types and matching those types to Go types), it became apparent that the `NullString` type is sufficient.
+Since the library is meant to output CSV, only the representation of the data is important.
+Passing pointers to `NullString` to `Scan` captures both numeric and text values as strings.
+The `NullString` type also allows distinguishing no value from empty strings.
+
+Which raises an originally overlooked problem, how are `null` values displayed.
+Options might be the text 'NULL' or nothing between commas.
+This is something that should be configurable.
 
