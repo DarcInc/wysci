@@ -38,7 +38,8 @@ const (
 	addSimpleData = `insert into test_simple values (1, 'hello world', '2019-01-01');
 		insert into test_simple values (2, NULL, '2019-01-02');
 		insert into test_simple values (3, 'date is null', NULL);
-		insert into test_simple values (4, 'ebedded,comma', '2019-01-04')`
+		insert into test_simple values (4, 'embedded,comma', '2019-01-04');
+		insert into test_simple values (5, 'embedded	tab', '2019-01-05');`
 
 	addSampleData = `insert into test_basic_types values (1, 1, 1.0, 1.0, 1.0, '$1.00', 'hel', 'Hello world', 'hello world', 'hello world');
 		insert into test_basic_types values (null, null, null, null, null, null, null, 'foo,bar', '"Hello World"', '"Hello, World"');

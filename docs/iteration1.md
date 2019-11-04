@@ -110,7 +110,7 @@ Since the library is meant to output CSV, only the representation of the data is
 Passing pointers to `NullString` to `Scan` captures both numeric and text values as strings.
 The `NullString` type also allows distinguishing no value from empty strings.
 
-Which raises an originally overlooked problem, how are `null` values displayed.
-Options might be the text 'NULL' or nothing between commas.
-This is something that should be configurable.
-
+The realization I don't actually need type information means part of this sprint goes away.
+What I did add to the sprint was the better handling of the output representation of the data.
+I should be able to handle all the principal database types.
+They appear correctly formatted in the output.
