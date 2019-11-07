@@ -2,11 +2,11 @@ package wysci
 
 import (
 	"database/sql"
-	"log"
 	"os"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -96,6 +96,8 @@ func teardown(conn *sql.DB) error {
 func TestMain(m *testing.M) {
 	connStr := os.Getenv("CONNSTR")
 	var err error
+
+	log.SetFormatter(&log.JSONFormatter{})
 
 	testConn, err = sql.Open("sqlite3", connStr)
 	if err != nil {

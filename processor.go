@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var safeEOL = []byte("\r\n")
@@ -43,11 +46,13 @@ func NewCSVFormatter(q Query) (*CSVFormatter, error) {
 func (c *CSVFormatter) writeRow(row []string, w io.Writer) (int, error) {
 	re, err := regexp.Compile(fmt.Sprintf("[\"%s]", c.Delimiter))
 	if err != nil {
+		log.WithField("message", err.Error()).Errorf("Failed to compile embedded quotes expression: %v", err)
 		return 0, err
 	}
 
 	replQuotes, err := regexp.Compile("\"")
 	if err != nil {
+		log.WithField("message", err.Error()).Errorf("Failed to compile quote replacement expression: %v", err)
 		return 0, err
 	}
 
@@ -63,12 +68,14 @@ func (c *CSVFormatter) writeRow(row []string, w io.Writer) (int, error) {
 
 		_, err := b.Write(byteRow)
 		if err != nil {
+			log.WithField("message", err.Error()).Errorf("Failed to write buffer: %v", err)
 			return 0, err
 		}
 
 		if i < len(row)-1 {
 			_, err = b.Write([]byte(c.Delimiter))
 			if err != nil {
+				log.WithField("message", err.Error()).Errorf("Failed to write buffer: %v", err)
 				return 0, err
 			}
 		}
@@ -76,11 +83,13 @@ func (c *CSVFormatter) writeRow(row []string, w io.Writer) (int, error) {
 
 	_, err = b.Write(safeEOL)
 	if err != nil {
+		log.WithField("message", err.Error()).Errorf("Failed to write buffer: %v", err)
 		return 0, err
 	}
 
 	n, err := w.Write(b.Bytes())
 	if err != nil {
+		log.WithField("message", err.Error()).Errorf("Failed to write buffer: %v", err)
 		return n, err
 	}
 
@@ -106,6 +115,7 @@ func (c *CSVFormatter) Format(values []sql.NullString, w io.Writer) (int, error)
 	if !c.didPrintHeaders {
 		bytesWritten, err = c.writeHeaders(w)
 		if err != nil {
+			log.WithField("message", err.Error()).Errorf("Failed to write headers: %v", err)
 			return bytesWritten, err
 		}
 	}
@@ -122,6 +132,7 @@ func (c *CSVFormatter) Format(values []sql.NullString, w io.Writer) (int, error)
 	nextBytes, err := c.writeRow(row, w)
 	bytesWritten += nextBytes
 	if err != nil {
+		log.WithField("message", err.Error()).Errorf("Failed to write response row: %v", err)
 		return bytesWritten, err
 	}
 
@@ -146,10 +157,18 @@ type QueryProcessor struct {
 // those rows to the formatter for final output.
 func (qp QueryProcessor) Process(query Query, w io.Writer) (int, error) {
 	var err error
+	startTime := time.Now()
+
+	log.WithField("startTime", startTime).Info("Start processing query")
+	defer log.WithFields(log.Fields{
+		"finished": time.Now(),
+		"duration": time.Since(startTime),
+	}).Info("Finished processing query")
 
 	if qp.RowFormatter == nil {
 		qp.RowFormatter, err = NewCSVFormatter(query)
 		if err != nil {
+			log.WithField("message", err.Error()).Errorf("Failed to generate new CSV formatter: %v", err)
 			return 0, err
 		}
 	}
@@ -165,12 +184,14 @@ func (qp QueryProcessor) Process(query Query, w io.Writer) (int, error) {
 	for query.result.Next() {
 		err = query.result.Scan(scanLine...)
 		if err != nil {
+			log.WithField("message", err.Error()).Errorf("Failed to scan result row: %v", err)
 			return totalBytes, err
 		}
 
 		bytesFormatted, err := qp.RowFormatter.Format(buffer, w)
 		totalBytes += bytesFormatted
 		if err != nil {
+			log.WithField("message", err.Error()).Errorf("Failed to format result row: %v", err)
 			return totalBytes, err
 		}
 	}

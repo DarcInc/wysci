@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // DBType is used to provide high-level type information about result columns.
@@ -56,19 +59,32 @@ type Query struct {
 
 // ExecuteQuery executes an SQL query and returns the wrapped results.
 func ExecuteQuery(conn *sql.DB, query string, params ...interface{}) (Query, error) {
+	startTime := time.Now()
+	log.WithField("startTime", startTime).Info("Querying database")
+	defer log.WithFields(log.Fields{
+		"duration": time.Since(startTime),
+		"finished": time.Now(),
+	}).Info("Query complete")
+
 	rows, err := conn.Query(query, params...)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"message": err.Error(),
+			"sql":     query,
+		}).Errorf("Failed to execute query with error: %v", err)
 		return Query{}, err
 	}
 
 	cols, err := rows.Columns()
 	if err != nil {
+		log.WithField("message", err.Error()).Errorf("Failed to get result columns: %v", err)
 		rows.Close()
 		return Query{}, err
 	}
 
 	types, err := rows.ColumnTypes()
 	if err != nil {
+		log.WithField("message", err.Error()).Errorf("Failed to get result column types: %v", err)
 		rows.Close()
 		return Query{}, err
 	}
@@ -97,19 +113,21 @@ func (q Query) Columns() []string {
 }
 
 // IndexOf returns the index of a column with a given name
-func (q Query) IndexOf(colName string) int {
+func (q Query) IndexOf(colName string) (int, error) {
 	for i := range q.columns {
 		if colName == q.columns[i] {
-			return i
+			return i, nil
 		}
 	}
-	return -1
+	log.WithField("columnName", colName).Warnf("Failed to find column %s", colName)
+	return -1, fmt.Errorf("Failed to find column %s", colName)
 }
 
 // Type returns the high-level type given either the index or the name
 func (q Query) Type(column interface{}) (DBType, error) {
 	name, ok := column.(string)
 	idx := 0
+	var err error
 
 	if !ok {
 		idx, ok = column.(int)
@@ -117,11 +135,11 @@ func (q Query) Type(column interface{}) (DBType, error) {
 			panic(fmt.Sprintf("Expected int or string but got %v", reflect.TypeOf(column)))
 		}
 	} else {
-		idx = q.IndexOf(name)
+		idx, err = q.IndexOf(name)
 	}
 
-	if idx < 0 {
-		return -1, fmt.Errorf("Unknown column %v", column)
+	if err != nil {
+		return -1, fmt.Errorf("Unknown column %v, %d", column, idx)
 	}
 
 	//targetType := q.types[idx].DatabaseTypeName()
@@ -155,15 +173,29 @@ func (q Query) MakeBuffer() []interface{} {
 
 // ForEach is a function that iterators over each result in the query
 func (q Query) ForEach(i Iterator) error {
+	startTime := time.Now()
+	log.WithField("startTime", startTime).Info("Starting ForEach")
+	defer log.WithFields(log.Fields{
+		"duration": time.Since(startTime),
+		"finished": time.Now(),
+	}).Info("Finished ForEach")
+
 	buffer := q.MakeBuffer()
 
 	for q.result.Next() {
+		log.Info("Starting next iteration")
 		err := q.result.Scan(buffer...)
+
 		if err != nil {
+			log.WithField("message", err.Error()).Errorf("Failed to scan query results: %v", err)
 			return err
 		}
 
 		stop, err := i.Iteration(buffer)
+		if err != nil {
+			log.WithField("message", err.Error()).Errorf("Error processing result row using iterator: %v", err)
+			return err
+		}
 
 		if stop {
 			break
@@ -175,17 +207,28 @@ func (q Query) ForEach(i Iterator) error {
 
 // Accumulate executes the accumulator over the results
 func (q Query) Accumulate(a Accumulator, starting interface{}) (interface{}, error) {
+	startTime := time.Now()
+	log.WithField("startTime", startTime).Info("Starting accumulator")
+	defer log.WithFields(log.Fields{
+		"duration": time.Since(startTime),
+		"finished": time.Now(),
+	}).Info("Finished accumulator")
+
 	buffer := q.MakeBuffer()
 
 	current := starting
 	for q.result.Next() {
+		log.Info("Starting next accumulator iteration")
+
 		err := q.result.Scan(buffer...)
 		if err != nil {
+			log.WithField("message", err.Error()).Errorf("Failed to scan query results: %v", err)
 			return nil, err
 		}
 
 		current, err = a.Accumulate(current, buffer)
 		if err != nil {
+			log.WithField("message", err.Error()).Errorf("Error calling accumulator: %v", err)
 			return starting, err
 		}
 	}

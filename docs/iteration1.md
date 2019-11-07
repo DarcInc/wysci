@@ -114,3 +114,11 @@ The realization I don't actually need type information means part of this sprint
 What I did add to the sprint was the better handling of the output representation of the data.
 I should be able to handle all the principal database types.
 They appear correctly formatted in the output.
+
+### Query Wrapper
+This is a starting point for creating better metadata support for a query.
+As the code was being written, testing column names and types became a common problem.
+The code to retrieve the column type and/or name is useful and wound up in multiple locations.
+Rather than duplicate the code, the `QueryWrapper` was created.
+
+
