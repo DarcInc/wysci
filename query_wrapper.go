@@ -1,6 +1,7 @@
 package wysci
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -57,34 +58,105 @@ type Query struct {
 	types         []*sql.ColumnType
 }
 
+func logStartTime(t time.Time, i string) {
+	f := log.Fields{
+		"startTime": t,
+	}
+
+	if i != "" {
+		f["requestID"] = i
+	}
+
+	log.WithFields(f).Info("Querying Database")
+}
+
+func logEndTime(t time.Time, i string) {
+	f := log.Fields{
+		"duration": time.Since(t),
+		"finished": time.Now(),
+	}
+
+	if i != "" {
+		f["requestID"] = i
+	}
+
+	log.WithFields(f).Info("Finished Querying Database")
+}
+
+func logError(e error, i string, fmt string, args ...interface{}) {
+	t := time.Now()
+	f := log.Fields{
+		"time":    t.String(),
+		"message": e.Error(),
+	}
+
+	if i != "" {
+		f["requestID"] = i
+	}
+
+	log.WithFields(f).Errorf(fmt, args...)
+}
+
 // ExecuteQuery executes an SQL query and returns the wrapped results.
 func ExecuteQuery(conn *sql.DB, query string, params ...interface{}) (Query, error) {
 	startTime := time.Now()
-	log.WithField("startTime", startTime).Info("Querying database")
-	defer log.WithFields(log.Fields{
-		"duration": time.Since(startTime),
-		"finished": time.Now(),
-	}).Info("Query complete")
+	logStartTime(startTime, "")
+	defer logEndTime(startTime, "")
 
 	rows, err := conn.Query(query, params...)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"message": err.Error(),
-			"sql":     query,
-		}).Errorf("Failed to execute query with error: %v", err)
+		logError(err, "", "Failed to execute query with error: %v", err)
 		return Query{}, err
 	}
 
 	cols, err := rows.Columns()
 	if err != nil {
-		log.WithField("message", err.Error()).Errorf("Failed to get result columns: %v", err)
+		logError(err, "", "Failed to get result columns: %v", err)
 		rows.Close()
 		return Query{}, err
 	}
 
 	types, err := rows.ColumnTypes()
 	if err != nil {
-		log.WithField("message", err.Error()).Errorf("Failed to get result column types: %v", err)
+		logError(err, "", "Failed to get result column types: %v", err)
+		rows.Close()
+		return Query{}, err
+	}
+
+	return Query{
+		executedQuery: query,
+		result:        rows,
+		columns:       cols,
+		types:         types,
+	}, nil
+}
+
+// ExecuteQueryWithContext executes a query with an available context for cancelation
+func ExecuteQueryWithContext(ctx context.Context, conn *sql.DB, query string, params ...interface{}) (Query, error) {
+	requestID := RequestIDFromContext(ctx)
+
+	startTime := time.Now()
+	logStartTime(startTime, requestID)
+
+	defer logEndTime(startTime, requestID)
+
+	// TODO: The database query needs to be "cancellable"
+	rows, err := conn.QueryContext(ctx, query, params...)
+	if err != nil {
+		logError(err, requestID, "Failed to execute query with error: %v", err)
+		return Query{}, err
+	}
+
+	cols, err := rows.Columns()
+	if err != nil {
+		logError(err, requestID, "Failed to get result columns: %v", err)
+		rows.Close()
+		return Query{}, err
+	}
+
+	types, err := rows.ColumnTypes()
+	if err != nil {
+		logError(err, requestID, "Failed to get result column types: %v", err)
 		rows.Close()
 		return Query{}, err
 	}

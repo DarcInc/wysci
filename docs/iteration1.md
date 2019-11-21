@@ -121,4 +121,10 @@ As the code was being written, testing column names and types became a common pr
 The code to retrieve the column type and/or name is useful and wound up in multiple locations.
 Rather than duplicate the code, the `QueryWrapper` was created.
 
+### Logrus
+Added an initial cut at logrus with two levels of verbosity.
+The `Info` level is meant to capture statistics while `Error` is meant to document returned errors.
+What's missing is the passing of context and a kind of request id.
+To avoid thos awkward situations when you log a password - the values passed to the query are not logged.
+
 

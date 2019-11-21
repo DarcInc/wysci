@@ -1,6 +1,7 @@
 package wysci
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -10,8 +11,23 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
+
+type key int
+
+const ridKey = key(0)
+
+// ContextWithRequestID adds a request ID to the context
+func ContextWithRequestID(ctx context.Context) context.Context {
+	return context.WithValue(ctx, ridKey, uuid.New().String())
+}
+
+// RequestIDFromContext returns the request ID for the context
+func RequestIDFromContext(ctx context.Context) string {
+	return ctx.Value(ridKey).(string)
+}
 
 func typeMetadata(rows *sql.Rows) ([]string, []string, error) {
 	names, err := rows.Columns()
